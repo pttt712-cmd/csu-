@@ -1,101 +1,116 @@
-# -*- coding: utf-8 -*-
 import streamlit as st
-from datetime import datetime, timedelta
+from PIL import Image
+from datetime import datetime
 
-st.set_page_config(page_title="홈케어 예약", layout="centered")
-st.title("🏠 홈케어 서비스 ")
+# --- 제목 ---
+st.title("🧹 스마트 청소 관리 앱")
 
-# Initialize session state
-if "step" not in st.session_state:
-    st.session_state.step = 1
-if "services" not in st.session_state:
-    st.session_state.services = {
-        "청소": 11000,
-        "장보기": 11000,
-        "요리": 15000,
-        "세탁": 10000,
-        "아이돌봄": 12000,
-        "노인/환자 케어": 10000
-    }
+# --- 1단계: 이미지 업로드 ---
+st.header("1단계: 청소할 공간 사진 업로드")
+uploaded_file = st.file_uploader("사진 선택", type=["jpg", "png", "jpeg"])
 
-# Step 1: 이름 + 주소
-if st.session_state.step == 1:
-    st.header("1️⃣ 이름 및 주소 입력")
-    name = st.text_input("이름을 입력해주세요")
-    address = st.text_input("주소를 입력해주세요")
-    if st.button("다음"):
-        if name and address:
-            st.session_state.name = name
-            st.session_state.address = address
-            st.session_state.step = 2
-        else:
-            st.warning("이름과 주소를 모두 입력해주세요.")
+if uploaded_file:
+    image = Image.open(uploaded_file)
+    st.image(image, caption="업로드한 사진", use_column_width=True)
+    st.success("사진 업로드 완료! (AI 공간 인식 기능은 여기서 처리됩니다)")
 
-# Step 2: 날짜 + 시간 선택
-elif st.session_state.step == 2:
-    st.header("2️⃣ 예약 날짜 및 시간 선택")
-    today = datetime.today()
-    date = st.date_input("예약 날짜 선택", min_value=today)
-    time = st.time_input("예약 시간 선택", value=datetime.now().time())
-    if st.button("다음"):
-        st.session_state.date = date
-        st.session_state.time = time
-        st.session_state.step = 3
+# --- 2단계: 청소할 공간 선택 ---
+st.header("2단계: 청소할 공간 선택")
+areas = ["화장실", "주방", "거실", "침실", "욕실", "정원", "빨래"]
+selected_area = st.selectbox("청소할 공간을 선택하세요:", areas)
 
-# Step 3: 서비스 선택 + 시간
-elif st.session_state.step == 3:
-    st.header("3️⃣ 서비스 및 시간 선택")
-    service = st.selectbox("서비스 선택", list(st.session_state.services.keys()))
-    hours = st.number_input("시간 입력 (시)", min_value=1, max_value=8, value=1)
-    price_per_hour = st.session_state.services[service]
-    total_price = price_per_hour * hours
-    st.write(f"💰 총 가격: {total_price:,}₩ (1시간 = {price_per_hour:,}₩)")
-    if st.button("다음"):
-        st.session_state.service = service
-        st.session_state.hours = hours
-        st.session_state.total_price = total_price
-        st.session_state.step = 4
+# --- 3단계: 청소 작업 리스트 (체크박스) ---
+st.header("3단계: 청소 작업 목록")
+tasks_dict = {
+    "화장실": [
+        "세면대와 거울 청소하기", "변기 청소하기", "바닥 쓸기", "물청소하기", 
+        "수납장 정리하기", "쓰레기통 청소하기", "화장지 교체하기", "개인용품 정리하기", 
+        "창문 닦기", "탈취제 뿌리기", "샤워기 청소하기", "거울 선반 닦기", 
+        "여분 용품 정리하기", "문 닦기", "사용한 물품 확인하기"
+    ],
+    "주방": [
+        "설거지 하기", "바닥 쓸기", "바닥 닦기", "냉장고 정리", "가스레인지/인덕션 닦기", 
+        "주방 상판 닦기", "서랍 정리", "그릇 닦기", "쓰레기 버리기", 
+        "식탁 닦기", "건조식품 정리", "조미료 확인", "벽 닦기", "행주 교체", 
+        "탈취제 뿌리기"
+    ],
+    # ... 다른 공간도 필요하면 추가 ...
+}
 
-# Step 4: 결제 방법 + 보험
-elif st.session_state.step == 4:
-    st.header("4️⃣ 결제 방법 및 보험 안내")
-    payment_method = st.selectbox("결제 방법 선택", ["신용카드", "카카오페이", "현금"])
-    st.write("✅ 서비스에는 기본 보험이 포함되어 있습니다.")
-    if st.button("다음"):
-        st.session_state.payment_method = payment_method
-        st.session_state.step = 5
+tasks = tasks_dict.get(selected_area, [])
+st.subheader(f"✅ {selected_area} 청소 작업")
+if tasks:
+    for i, task in enumerate(tasks, 1):
+        st.checkbox(f"{i}. {task}", key=f"{selected_area}_{i}")
 
-# Step 5: 직원 평가 + 사진 업로드
-elif st.session_state.step == 5:
-    st.header("5️⃣ 직원 평가 및 사진 업로드")
-    rating = st.slider("직원 평가 점수", min_value=1, max_value=5, value=5)
-    uploaded_file = st.file_uploader("사진 업로드 (선택)", type=["png", "jpg", "jpeg"])
-    st.session_state.rating = rating
-    st.session_state.uploaded_file = uploaded_file
-    if st.button("다음"):
-        # Giảm giá dựa trên đánh giá / ảnh
-        discount = rating * 1000  # ví dụ: 1 điểm = 1000₩ giảm
-        if uploaded_file:
-            discount += 2000  # upload ảnh thêm giảm 2000₩
-        st.session_state.discount = discount
-        st.session_state.final_price = max(st.session_state.total_price - discount, 0)
-        st.session_state.step = 6
+# --- 4단계: 다음 청소 일정 설정 ---
+st.header("4단계: 다음 청소 일정 예약")
 
-# Step 6: 예약 확인 + 요약
-elif st.session_state.step == 6:
-    st.header("6️⃣ 예약 확인")
-    st.write(f"이름: {st.session_state.name}")
-    st.write(f"주소: {st.session_state.address}")
-    st.write(f"예약 날짜: {st.session_state.date}")
-    st.write(f"예약 시간: {st.session_state.time}")
-    st.write(f"서비스: {st.session_state.service}")
-    st.write(f"시간: {st.session_state.hours}시간")
-    st.write(f"총 가격: {st.session_state.total_price:,}₩")
-    st.write(f"할인: {st.session_state.discount:,}₩")
-    st.write(f"최종 결제금액: {st.session_state.final_price:,}₩")
-    st.write(f"결제 방법: {st.session_state.payment_method}")
-    st.write(f"직원 평가: {st.session_state.rating}점")
-    if st.session_state.uploaded_file:
-        st.image(st.session_state.uploaded_file, caption="업로드한 사진", use_column_width=True)
-    if st.button("예약 완료"):
-        st.success("🎉 예약이 완료되었습니다!")
+# Lưu reminders vào session_state
+if "reminders" not in st.session_state:
+    st.session_state.reminders = []
+
+next_clean_date = st.date_input("다음 청소 날짜 선택", datetime.now())
+next_clean_time = st.time_input("다음 청소 시간 선택", datetime.now())
+reminder_dt = datetime.combine(next_clean_date, next_clean_time)
+
+if st.button("✅ 일정 저장"):
+    st.session_state.reminders.append(reminder_dt)
+    st.success(f"청소 일정 저장됨: {reminder_dt}")
+
+# Nút kiểm tra nhắc nhở
+if st.button("⏰ 체크 알림 확인"):
+    now = datetime.now()
+    if st.session_state.reminders:
+        for r in st.session_state.reminders:
+            if now >= r:
+                st.warning(f"⏰ 지금은 청소할 시간이에요! (예정 시간: {r})")
+            else:
+                st.info(f"다음 청소 예정: {r}")
+    else:
+        st.info("저장된 청소 일정이 없습니다.")
+
+# --- 5단계: 공간별 청소 팁/빠르게 끝내는 방법 ---
+st.header("5단계: 공간별 청소 팁 (유연하게 활용)")
+tips_dict = {
+    "화장실": [
+        "큰 물건부터 정리하고 작은 것들을 닦으세요.",
+        "세면대와 변기 주변은 하루에 한 번씩 빠르게 닦으세요.",
+        "청소 도구를 미리 준비하면 시간을 절약할 수 있어요."
+    ],
+    "주방": [
+        "조리대 위를 먼저 정리하고 설거지 후 바닥을 닦으세요.",
+        "냉장고와 가스레인지는 주 1회 집중 청소하세요.",
+        "쓰레기는 미리 버리고 필요한 도구만 꺼내세요."
+    ],
+    "거실": [
+        "큰 가구 주변부터 청소하고 장식품 순서로 진행하세요.",
+        "쿠션과 담요를 정리 후 바닥 청소를 하세요.",
+        "카펫은 청소기로 빠르게 먼지를 제거하세요."
+    ],
+    "침실": [
+        "침대 정리와 침구 교체부터 시작하세요.",
+        "서랍과 옷장을 정리하면서 필요한 것만 남기세요.",
+        "바닥 쓸기와 닦기를 마지막에 하세요."
+    ],
+    "욕실": [
+        "샤워기, 세면대, 욕조 순으로 청소하세요.",
+        "물청소는 마지막에 하여 물때를 최소화하세요.",
+        "수건과 용품 정리는 빠르게 정리하세요."
+    ],
+    "정원": [
+        "큰 잎과 낙엽을 먼저 제거하세요.",
+        "식물 물주기와 잡초 제거를 병행하세요.",
+        "도구는 미리 준비해 청소 시간을 줄이세요."
+    ],
+    "빨래": [
+        "옷을 색상별로 분류한 후 세탁하세요.",
+        "세탁 후 바로 널고 다림질 순으로 진행하세요.",
+        "서랍 정리와 함께 옷 접기를 동시에 하면 효율적이에요."
+    ]
+}
+
+st.subheader(f"💡 {selected_area} 청소 팁")
+for i, tip in enumerate(tips_dict.get(selected_area, []), 1):
+    st.checkbox(f"{i}. {tip}", key=f"{selected_area}_tip_{i}")
+
