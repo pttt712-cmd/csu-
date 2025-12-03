@@ -1,6 +1,7 @@
 import streamlit as st
 from PIL import Image
 from datetime import datetime
+import random
 
 # --- 제목 ---
 st.title("🧹 스마트 청소 관리 앱")
@@ -8,7 +9,6 @@ st.title("🧹 스마트 청소 관리 앱")
 # --- 1단계: 이미지 업로드 ---
 st.header("1단계: 청소할 공간 사진 업로드")
 uploaded_file = st.file_uploader("사진 선택", type=["jpg", "png", "jpeg"])
-
 if uploaded_file:
     image = Image.open(uploaded_file)
     st.image(image, caption="업로드한 사진", use_column_width=True)
@@ -23,7 +23,7 @@ selected_area = st.selectbox("청소할 공간을 선택하세요:", areas)
 st.header("3단계: 청소 작업 목록")
 tasks_dict = {
     "화장실": [
-        "세면대와 거울 청소하기", "변기 청소하기", "바닥 쓸기", "물청소하기", 
+        "세면대와 거울 청소하기", "변기 청소하기", "바닥 쓸기", 
         "수납장 정리하기", "쓰레기통 청소하기", "화장지 교체하기", "개인용품 정리하기", 
         "창문 닦기", "탈취제 뿌리기", "샤워기 청소하기", "거울 선반 닦기", 
         "여분 용품 정리하기", "문 닦기", "사용한 물품 확인하기"
@@ -34,7 +34,7 @@ tasks_dict = {
         "식탁 닦기", "건조식품 정리", "조미료 확인", "벽 닦기", "행주 교체", 
         "탈취제 뿌리기"
     ],
-    # ... 다른 공간도 필요하면 추가 ...
+    # 다른 공간도 필요하면 추가
 }
 
 tasks = tasks_dict.get(selected_area, [])
@@ -43,8 +43,8 @@ if tasks:
     for i, task in enumerate(tasks, 1):
         st.checkbox(f"{i}. {task}", key=f"{selected_area}_{i}")
 
-# --- 4단계: 다음 청소 일정 설정 ---
-st.header("4단계: 다음 청소 일정 예약")
+# --- 4단계: 다음 청소 일정 설정 + 체크 알림 ---
+st.header("4단계: 다음 청소 일정 예약 및 알림")
 
 # Lưu reminders vào session_state
 if "reminders" not in st.session_state:
@@ -114,3 +114,23 @@ st.subheader(f"💡 {selected_area} 청소 팁")
 for i, tip in enumerate(tips_dict.get(selected_area, []), 1):
     st.checkbox(f"{i}. {tip}", key=f"{selected_area}_tip_{i}")
 
+# --- 6단계: 완료 후 보상/칭찬 ---
+st.header("6단계: 청소 완료 보상 🎁")
+
+all_tasks_done = True
+for i, task in enumerate(tasks, 1):
+    if not st.session_state.get(f"{selected_area}_{i}", False):
+        all_tasks_done = False
+        break
+
+if all_tasks_done and tasks:
+    # Lời khen động lực
+    praises = [
+        "🌟 오늘도 청소 완료! 집이 반짝반짝 빛나요!",
+        "💖 청소 미션 성공! 기분 좋은 하루가 될 거예요!",
+        "🎊 훌륭해요! 깨끗한 공간에서 휴식하세요!",
+        "🏡 모든 정리 끝! 편안하게 한숨 돌리세요!"
+    ]
+    st.success(random.choice(praises))
+    # Câu thưởng cà phê
+    st.info("☕ 커피 한 잔과 함께 오늘의 청소 성과를 감상해보세요!")
